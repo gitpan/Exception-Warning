@@ -17,6 +17,7 @@ my $build = Module::Build->new(
     optional => {
     },
     build_requires => {
+	'Test::Unit::Lite'   => 0.07,
     },
     create_makefile_pl => 'traditional',
     create_readme => 1,

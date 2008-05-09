@@ -2,7 +2,7 @@
 
 package Exception::Warning;
 use 5.006;
-our $VERSION = 0.01;
+our $VERSION = 0.01_01;
 
 =head1 NAME
 
@@ -216,7 +216,9 @@ L<Exception::Base>
 
 =over
 
-=item use Exception::Died '%SIG' [ => 'warn' ];
+=item use Exception::Died '%SIG';
+
+=item use Exception::Died '%SIG' => 'warn';
 
 Changes B<$SIG{__WARN__}> hook to B<Exception::Died::__WARN__> function.
 

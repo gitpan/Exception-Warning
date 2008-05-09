@@ -1,5 +1,10 @@
 ------------------------------------------------------------------------
-0.01 | Piotr Roszatycki <dexter@debian.org> | 2008-05-06
+0.0101 | Piotr Roszatycki <dexter@debian.org> | 2008-05-09
+
+* Build requires Test::Unit::Lite >= 0.07.
+
+------------------------------------------------------------------------
+0.01 | Piotr Roszatycki <dexter@debian.org> | 2008-05-08
 
 * Development release.
 
