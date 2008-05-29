@@ -13,6 +13,7 @@ SYNOPSIS
       warn "Boom!";   # dumps full stack trace
 
       # Can be used in local scope only
+      use Exception::Warning;
       {
           local $SIG{__WARN__} = \&Exception::Warning::__WARN__;
           warn "Boom!";   # warn via exception
@@ -33,6 +34,89 @@ DESCRIPTION
     real exception object. The warning message is stored in *warning*
     attribute.
 
+BASE CLASSES
+    *   Exception::Base
+
+IMPORTS
+    use Exception::Died '%SIG';
+    use Exception::Died '%SIG' => 'warn';
+        Changes $SIG{__WARN__} hook to Exception::Died::__WARN__ function.
+
+    use Exception::Died '%SIG' => 'die';
+        Changes $SIG{__WARN__} hook to Exception::Died::__DIE__ function.
+
+CONSTANTS
+    ATTRS
+        Declaration of class attributes as reference to hash.
+
+        See Exception::Base for details.
+
+ATTRIBUTES
+    This class provides new attributes. See Exception::Base for other
+    descriptions.
+
+    message (ro)
+        Contains the message which is set by $SIG{__WARN__}.
+
+METHODS
+    stringify([$*verbosity*[, $*message*]])
+        Returns the string representation of exception object. It is called
+        automatically if the exception object is used in scalar context. The
+        method can be used explicity and then the verbosity level can be
+        used.
+
+        The format of output is "*message*: *warning*".
+
+PRIVATE FUNCTIONS
+    __WARN__
+        This is a hook function for $SIG{__WARN__}. It converts the warning
+        into exception object which is immediately stringify to scalar and
+        printed with warn core function. This hook can be enabled with
+        pragma:
+
+          use Exception::Died '%SIG' => 'warn';
+
+        or manually, i.e. for local scope:
+
+          local $SIG{__WARN__} = \&Exception::Died::__WARN__;
+
+    __DIE__
+        This is a hook function for $SIG{__DIE__}. It converts the warning
+        into exception object which is immediately thrown. This hook can be
+        enabled with pragma:
+
+          use Exception::Died '%SIG' => 'die';
+
+        or manually, i.e. for local scope:
+
+          local $SIG{__WARN__} = \&Exception::Died::__DIE__;
+
+PERFORMANCE
+    The Exception::Warning module can change $SIG{__WARN__} hook. It costs a
+    speed for simple warn operation. It was tested against unhooked warn.
+
+      -------------------------------------------------------
+      | Module                              |         run/s |
+      -------------------------------------------------------
+      | undef $SIG{__WARN__}                |      276243/s |
+      -------------------------------------------------------
+      | $SIG{__WARN__} = sub { }            |      188215/s |
+      -------------------------------------------------------
+      | Exception::Warning '%SIG'           |        1997/s |
+      -------------------------------------------------------
+      | Exception::Warning '%SIG', verb.=>0 |      152348/s |
+      -------------------------------------------------------
+
+    It means that Exception::Warning is significally slower than simple
+    warn. It is usually used only for debugging purposes, so it shouldn't be
+    an important problem.
+
+SEE ALSO
+    Exception::Base.
+
+BUGS
+    If you find the bug, please report it.
+
 AUTHOR
     Piotr Roszatycki <dexter@debian.org>
 
@@ -42,5 +126,5 @@ LICENSE
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
 
-    See http://www.perl.com/perl/misc/Artistic.html
+    See <http://www.perl.com/perl/misc/Artistic.html>
 

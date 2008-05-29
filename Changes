@@ -1,4 +1,11 @@
 ------------------------------------------------------------------------
+0.0102 | Piotr Roszatycki <dexter@debian.org> | 2008-05-29
+
+Changes:
+
+* Fixed POD coverage.
+
+------------------------------------------------------------------------
 0.0101 | Piotr Roszatycki <dexter@debian.org> | 2008-05-09
 
 * Build requires Test::Unit::Lite >= 0.07.

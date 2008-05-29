@@ -2,7 +2,7 @@
 
 package Exception::Warning;
 use 5.006;
-our $VERSION = 0.01_01;
+our $VERSION = 0.01_02;
 
 =head1 NAME
 
@@ -21,6 +21,7 @@ Exception::Warning - Convert simple warn into real exception object
   warn "Boom!";   # dumps full stack trace
 
   # Can be used in local scope only
+  use Exception::Warning;
   {
       local $SIG{__WARN__} = \&Exception::Warning::__WARN__;
       warn "Boom!";   # warn via exception
@@ -225,6 +226,18 @@ Changes B<$SIG{__WARN__}> hook to B<Exception::Died::__WARN__> function.
 =item use Exception::Died '%SIG' => 'die';
 
 Changes B<$SIG{__WARN__}> hook to B<Exception::Died::__DIE__> function.
+
+=back
+
+=head1 CONSTANTS
+
+=over
+
+=item ATTRS
+
+Declaration of class attributes as reference to hash.
+
+See L<Exception::Base> for details.
 
 =back
 
