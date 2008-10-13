@@ -2,7 +2,7 @@
 
 package Exception::Warning;
 use 5.006;
-our $VERSION = 0.01_02;
+our $VERSION = 0.02;
 
 =head1 NAME
 
@@ -52,15 +52,18 @@ use strict;
 use warnings;
 
 
-# Base class
+# Extend Exception::Base class
+use Exception::Base 0.19;
 use base 'Exception::Base';
 
 
 # List of class fields (name => {is=>ro|rw, default=>value})
 use constant ATTRS => {
     %{ Exception::Base->ATTRS },     # SUPER::ATTRS
-    default_message => { default => 'warning' },
-    warning         => { is => 'ro' },
+    stringify_attributes => { default => [ 'message', 'warning' ] },
+    default_attribute => { default => 'warning' },
+    message           => { is => 'rw', default => 'Unknown warning' },
+    warning           => { is => 'ro' },
 };
 
 
@@ -118,48 +121,20 @@ sub unimport {
 }
 
 
-# Convert an exception to string
-sub stringify {
-    my ($self, $verbosity, $message) = @_;
-
-    $verbosity = defined $self->{verbosity}
-               ? $self->{verbosity}
-               : $self->{defaults}->{verbosity}
-        if not defined $verbosity;
-
-    # The argument overrides the field
-    $message = $self->{message} unless defined $message;
-
-    my $is_message = defined $message && $message ne '';
-    my $is_warning = $self->{warning};
-    if ($is_message or $is_warning) {
-        $message = ($is_message ? $message : '')
-                 . ($is_message && $is_warning ? ': ' : '')
-                 . ($is_warning ? $self->{warning} : '');
-    }
-    else {
-        $message = $self->{defaults}->{message};
-    }
-    return $self->SUPER::stringify($verbosity, $message);
-}
-
-
-# Stringify for overloaded operator. The same as SUPER but Perl needs it here.
-sub __stringify {
-    return $_[0]->stringify;
-}
-
-
 # Warning hook with die
 sub __DIE__ {
     if (not ref $_[0]) {
+        # Do not recurse on Exception::Died & Exception::Warning
+        die $_[0] if $_[0] =~ /^Exception::(Died|Warning): /;
+
         # Simple warn: recover warning message
+        my $message = $_[0];
+        $message =~ s/\t\.\.\.caught at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n?$//s;
+        while ($message =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { }
+        $message =~ s/( at (?!.*\bat\b.*).* line \d+( thread \d+)?\.)?\n$//s;
+
         my $e = __PACKAGE__->new;
-        my $warnining = $_[0];
-        $warnining =~ s/\t\.\.\.caught at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n?$//s;
-        while ($warnining =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { }
-        $warnining =~ s/( at (?!.*\bat\b.*).* line \d+( thread \d+)?\.)?\n$//s;
-        $e->{warning} = $warnining;
+        $e->{warning} = $message;
         die $e;
     }
     # Otherwise: throw unchanged exception
@@ -174,12 +149,13 @@ sub __WARN__ {
         return if __PACKAGE__->ATTRS->{verbosity}->{default} == 0;
 
         # Simple warn: recover warning message
+        my $message = $_[0];
+        $message =~ s/\t\.\.\.caught at (?!.*\bat\b.*).* line \d+( thread \d+)?\.$//s;
+        while ($message =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { }
+        $message =~ s/( at (?!.*\bat\b.*).* line \d+( thread \d+)?\.)?\n$//s;
+
         my $e = __PACKAGE__->new;
-        my $warnining = $_[0];
-        $warnining =~ s/\t\.\.\.caught at (?!.*\bat\b.*).* line \d+( thread \d+)?\.$//s;
-        while ($warnining =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { }
-        $warnining =~ s/( at (?!.*\bat\b.*).* line \d+( thread \d+)?\.)?\n$//s;
-        $e->{warning} = $warnining;
+        $e->{warning} = $message;
         warn $e;
     }
     else {
@@ -202,6 +178,27 @@ __init;
 
 
 __END__
+
+=begin umlwiki
+
+= Class Diagram =
+
+[                         <<exception>>
+                        Exception::Warning
+ --------------------------------------------------------------
+ +message : Str = "Unknown warning"                       {new}
+ +warning : Str
+ #default_attribute : Str = "warning"
+ #stringify_attributes : ArrayRef[Str] = ["message", "warning"]
+ --------------------------------------------------------------
+ #_collect_system_data()
+ <<utility>> -__DIE__()
+ <<utility>> -__WARN__()
+ <<constant>> +ATTRS() : HashRef                               ]
+
+[Exception::Warning] ---|> [Exception::Base]
+
+=end umlwiki
 
 =head1 BASE CLASSES
 
@@ -248,23 +245,25 @@ descriptions.
 
 =over
 
-=item message (ro)
+=item message (rw, default: 'Unknown warning')
 
-Contains the message which is set by B<$SIG{__WARN__}>.
+Contains the message of the exception.  This class overrides the default value
+from L<Exception::Base> class.
 
-=back
+=item warning (ro)
 
-=head1 METHODS
+Contains the message which is set by B<$SIG{__WARN__}> hook.
 
-=over
+=item stringify_attributes (default: ['message', 'eval_error'])
 
-=item stringify([$I<verbosity>[, $I<message>]])
+Meta-attribute contains the format of string representation of exception
+object.  This class overrides the default value from L<Exception::Base>
+class.
 
-Returns the string representation of exception object.  It is called
-automatically if the exception object is used in scalar context.  The method
-can be used explicity and then the verbosity level can be used.
+=item default_attribute (default: 'eval_error')
 
-The format of output is "I<message>: I<warning>".
+Meta-attribute contains the name of the default attribute.  This class
+overrides the default value from L<Exception::Base> class.
 
 =back
 
