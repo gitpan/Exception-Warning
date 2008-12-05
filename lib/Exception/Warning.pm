@@ -2,7 +2,7 @@
 
 package Exception::Warning;
 use 5.006;
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 =head1 NAME
 
@@ -53,18 +53,14 @@ use warnings;
 
 
 # Extend Exception::Base class
-use Exception::Base 0.19;
-use base 'Exception::Base';
-
-
-# List of class fields (name => {is=>ro|rw, default=>value})
-use constant ATTRS => {
-    %{ Exception::Base->ATTRS },     # SUPER::ATTRS
-    stringify_attributes => { default => [ 'message', 'warning' ] },
-    default_attribute => { default => 'warning' },
-    message           => { is => 'rw', default => 'Unknown warning' },
-    warning           => { is => 'ro' },
-};
+use Exception::Base 0.20
+    'Exception::Warning' => {
+        has       => { ro => [ 'warning' ] },
+        message   => 'Unknown warning',
+        verbosity => 3,
+        default_attribute => 'warning',
+        string_attributes => [ 'message', 'warning' ],
+    };
 
 
 # Handle %SIG tag
@@ -79,7 +75,7 @@ sub import {
             my $type = 'warn';
             if (defined $_[0] and $_[0] =~ /^(die|warn)$/) {
                 $type = shift @_;
-            }
+            };
             # Handle warn hook
             if ($type eq 'warn') {
                 # is 'warn'
@@ -88,21 +84,21 @@ sub import {
             else {
                 # must be 'die'
                 $SIG{__WARN__} = \&__DIE__;
-            }
+            };
         }
         else {
             # Other parameters goes to SUPER::import
             push @params, $name;
             push @params, shift @_ if defined $_[0] and ref $_[0] eq 'HASH';
-        }
-    }
+        };
+    };
 
     if (@params) {
         return $pkg->SUPER::import(@params);
-    }
+    };
 
     return 1;
-}
+};
 
 
 # Unexport try/catch
@@ -114,8 +110,8 @@ sub unimport {
         if ($name eq '%SIG') {
             # Undef die hook
             $SIG{__WARN__} = '';
-        }
-    }
+        };
+    };
 
     return 1;
 }
@@ -130,7 +126,7 @@ sub __DIE__ {
         # Simple warn: recover warning message
         my $message = $_[0];
         $message =~ s/\t\.\.\.caught at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n?$//s;
-        while ($message =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { }
+        while ($message =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { };
         $message =~ s/( at (?!.*\bat\b.*).* line \d+( thread \d+)?\.)?\n$//s;
 
         my $e = __PACKAGE__->new;
@@ -139,7 +135,7 @@ sub __DIE__ {
     }
     # Otherwise: throw unchanged exception
     die $_[0];
-}
+};
 
 
 # Warning hook with warn
@@ -151,7 +147,7 @@ sub __WARN__ {
         # Simple warn: recover warning message
         my $message = $_[0];
         $message =~ s/\t\.\.\.caught at (?!.*\bat\b.*).* line \d+( thread \d+)?\.$//s;
-        while ($message =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { }
+        while ($message =~ s/\t\.\.\.propagated at (?!.*\bat\b.*).* line \d+( thread \d+)?\.\n$//s) { };
         $message =~ s/( at (?!.*\bat\b.*).* line \d+( thread \d+)?\.)?\n$//s;
 
         my $e = __PACKAGE__->new;
@@ -161,17 +157,8 @@ sub __WARN__ {
     else {
         # Otherwise: throw unchanged exception
         warn $_[0];
-    }
-}
-
-
-# Module initialization
-sub __init {
-    __PACKAGE__->_make_accessors;
-}
-
-
-__init;
+    };
+};
 
 
 1;
@@ -189,7 +176,7 @@ __END__
  +message : Str = "Unknown warning"                       {new}
  +warning : Str
  #default_attribute : Str = "warning"
- #stringify_attributes : ArrayRef[Str] = ["message", "warning"]
+ #string_attributes : ArrayRef[Str] = ["message", "warning"]
  --------------------------------------------------------------
  #_collect_system_data()
  <<utility>> -__DIE__()
@@ -218,11 +205,11 @@ L<Exception::Base>
 
 =item use Exception::Died '%SIG' => 'warn';
 
-Changes B<$SIG{__WARN__}> hook to B<Exception::Died::__WARN__> function.
+Changes C<$SIG{__WARN__}> hook to C<Exception::Died::__WARN__> function.
 
 =item use Exception::Died '%SIG' => 'die';
 
-Changes B<$SIG{__WARN__}> hook to B<Exception::Died::__DIE__> function.
+Changes C<$SIG{__WARN__}> hook to C<Exception::Died::__DIE__> function.
 
 =back
 
@@ -252,9 +239,9 @@ from L<Exception::Base> class.
 
 =item warning (ro)
 
-Contains the message which is set by B<$SIG{__WARN__}> hook.
+Contains the message which is set by C<$SIG{__WARN__}> hook.
 
-=item stringify_attributes (default: ['message', 'eval_error'])
+=item string_attributes (default: ['message', 'eval_error'])
 
 Meta-attribute contains the format of string representation of exception
 object.  This class overrides the default value from L<Exception::Base>
@@ -275,7 +262,7 @@ overrides the default value from L<Exception::Base> class.
 
 This is a hook function for $SIG{__WARN__}.  It converts the warning into
 exception object which is immediately stringify to scalar and printed with
-B<warn> core function.  This hook can be enabled with pragma:
+C<warn> core function.  This hook can be enabled with pragma:
 
   use Exception::Died '%SIG' => 'warn';
 
@@ -299,7 +286,7 @@ or manually, i.e. for local scope:
 
 =head1 PERFORMANCE
 
-The B<Exception::Warning> module can change B<$SIG{__WARN__}> hook.  It costs
+The C<Exception::Warning> module can change C<$SIG{__WARN__}> hook.  It costs
 a speed for simple warn operation.  It was tested against unhooked warn.
 
   -------------------------------------------------------
@@ -314,7 +301,7 @@ a speed for simple warn operation.  It was tested against unhooked warn.
   | Exception::Warning '%SIG', verb.=>0 |      152348/s |
   -------------------------------------------------------
 
-It means that B<Exception::Warning> is significally slower than simple warn.
+It means that C<Exception::Warning> is significally slower than simple warn.
 It is usually used only for debugging purposes, so it shouldn't be an
 important problem.
 

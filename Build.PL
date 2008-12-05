@@ -12,18 +12,18 @@ my $build = Module::Build->new(
     license => 'perl',
     requires => {
         'perl'               => 5.006,
-        'Exception::Base'    => 0.19,
+        'Exception::Base'    => 0.20,
     },
     optional => {
     },
     build_requires => {
-	'Test::Unit::Lite'   => 0.07,
+	'Test::Unit::Lite'   => 0.10,
     },
     create_makefile_pl => 'traditional',
     create_readme => 1,
     recursive_test_files => 1,
     add_to_cleanup => [
-        'META.yml', '*.bak', '*.gz', '*.tgz', '*.ppd',
+        'META.yml', '*.bak', '*.gz', '*.tgz', '*.ppd', '*.deb', '*.bat',
         'Makefile.PL', 'Makefile', 'pm_to_blib', 'README', 'cover_db',
         'Exception-Warning-*',
     ],

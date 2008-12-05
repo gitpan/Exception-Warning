@@ -99,7 +99,7 @@ sub test_warn_warn {
     die if $@;
 }
 
-sub test_stringify {
+sub test_to_string {
     my $self = shift;
 
     my $obj = Exception::Warning->new(message=>'Stringify');
@@ -107,28 +107,33 @@ sub test_stringify {
     $self->assert_not_null($obj);
     $self->assert($obj->isa("Exception::Warning"), '$obj->isa("Exception::Warning")');
     $self->assert($obj->isa("Exception::Base"), '$obj->isa("Exception::Base")');
-    $self->assert_equals('', $obj->stringify(0));
-    $self->assert_equals("Stringify\n", $obj->stringify(1));
-    $self->assert_matches(qr/Stringify at .* line \d+.\n/s, $obj->stringify(2));
-    $self->assert_matches(qr/Exception::Warning: Stringify at .* line \d+\n/s, $obj->stringify(3));
-    $self->assert_equals("Message\n", $obj->stringify(1, "Message"));
-    $self->assert_equals("Unknown warning\n", $obj->stringify(1, ""));
+    $obj->{verbosity} = 0;
+    $self->assert_equals('', $obj->to_string);
+    $obj->{verbosity} = 1;
+    $self->assert_equals("Stringify\n", $obj->to_string);
+    $obj->{verbosity} = 2;
+    $self->assert_matches(qr/Stringify at .* line \d+.\n/s, $obj->to_string);
+    $obj->{verbosity} = 3;
+    $self->assert_matches(qr/Exception::Warning: Stringify at .* line \d+\n/s, $obj->to_string);
 
     $obj->{warning} = 'Warning';
-    $self->assert_equals('', $obj->stringify(0));
-    $self->assert_equals("Stringify: Warning\n", $obj->stringify(1));
-    $self->assert_matches(qr/Stringify: Warning at .* line \d+.\n/s, $obj->stringify(2));
-    $self->assert_matches(qr/Exception::Warning: Stringify: Warning at .* line \d+\n/s, $obj->stringify(3));
-    $self->assert_equals("Message\n", $obj->stringify(1, "Message"));
-    $self->assert_equals("Unknown warning\n", $obj->stringify(1, ""));
+    $obj->{verbosity} = 0;
+    $self->assert_equals('', $obj->to_string);
+    $obj->{verbosity} = 1;
+    $self->assert_equals("Stringify: Warning\n", $obj->to_string);
+    $obj->{verbosity} = 2;
+    $self->assert_matches(qr/Stringify: Warning at .* line \d+.\n/s, $obj->to_string);
+    $obj->{verbosity} = 3;
+    $self->assert_matches(qr/Exception::Warning: Stringify: Warning at .* line \d+\n/s, $obj->to_string);
 
+    $obj->{verbosity} = undef;
     $self->assert_equals(1, $obj->{defaults}->{verbosity} = 1);
     $self->assert_equals(1, $obj->{defaults}->{verbosity});
-    $self->assert_equals("Stringify: Warning\n", $obj->stringify);
+    $self->assert_equals("Stringify: Warning\n", $obj->to_string);
     $self->assert_not_null($obj->{defaults}->{verbosity});
     $obj->{defaults}->{verbosity} = Exception::Warning->ATTRS->{verbosity}->{default};
     $self->assert_equals(1, $obj->{verbosity} = 1);
-    $self->assert_equals("Stringify: Warning\n", $obj->stringify);
+    $self->assert_equals("Stringify: Warning\n", $obj->to_string);
 
     $self->assert_equals("Stringify: Warning\n", "$obj");
 }

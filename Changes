@@ -1,4 +1,13 @@
 ------------------------------------------------------------------------
+0.03 | Piotr Roszatycki <dexter@debian.org> | 2008-12-05
+
+Changes:
+
+* Increased default verbosity to 3.
+
+* Requires Exception::Base >= 0.20.
+
+------------------------------------------------------------------------
 0.02 | Piotr Roszatycki <dexter@debian.org> | 2008-10-13
 
 Changes:
