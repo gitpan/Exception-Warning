@@ -1,8 +1,6 @@
 #!/usr/bin/perl -c
 
 package Exception::Warning;
-use 5.006;
-our $VERSION = 0.03;
 
 =head1 NAME
 
@@ -29,13 +27,16 @@ Exception::Warning - Convert simple warn into real exception object
   warn "Boom!";       # standard warn
 
   # Run Perl with verbose warnings
-  perl -MException::Warning=%SIG,warn,verbosity=>3 script.pl
+  $ perl -MException::Warning=%SIG,warn,verbosity=>3 script.pl
 
   # Run Perl which dies on first warning
-  perl -MException::Warning=%SIG,die,verbosity=>3 script.pl
+  $ perl -MException::Warning=%SIG,die,verbosity=>3 script.pl
 
   # Run Perl which ignores any warnings
-  perl -MException::Warning=%SIG,warn,verbosity=>0 script.pl
+  $ perl -MException::Warning=%SIG,warn,verbosity=>0 script.pl
+
+  # Debugging with increased verbosity
+  $ perl -MException::Warning=:debug script.pl
 
 =head1 DESCRIPTION
 
@@ -47,49 +48,158 @@ attribute.
 
 =cut
 
+use 5.006;
 
 use strict;
 use warnings;
 
+our $VERSION = '0.04';
+
+
+=head1 INHERITANCE
+
+=over 2
+
+=item *
+
+extends L<Exception::Base>
+
+=back
+
+=cut
 
 # Extend Exception::Base class
-use Exception::Base 0.20
-    'Exception::Warning' => {
-        has       => { ro => [ 'warning' ] },
-        message   => 'Unknown warning',
-        verbosity => 3,
-        default_attribute => 'warning',
-        string_attributes => [ 'message', 'warning' ],
-    };
+BEGIN {
+
+=head1 CONSTANTS
+
+=over
+
+=item ATTRS : HashRef
+
+Declaration of class attributes as reference to hash.
+
+See L<Exception::Base> for details.
+
+=back
+
+=head1 ATTRIBUTES
+
+This class provides new attributes.  See L<Exception::Base> for other
+descriptions.
+
+=over
+
+=cut
+
+    my %ATTRS = ();
+    my @ATTRS_RO = ();
+
+=item warning : Str {ro}
+
+Contains the message which is set by C<$SIG{__WARN__}> hook.
+
+=cut
+
+    push @ATTRS_RO, 'warning';
+
+=item message : Str = "Unknown warning"
+
+Contains the message of the exception.  This class overrides the default value
+from L<Exception::Base> class.
+
+=cut
+
+    $ATTRS{message}           = 'eval_error';
+
+=item string_attributes : ArrayRef[Str] = ["message", "warning"]
+
+Meta-attribute contains the format of string representation of exception
+object.  This class overrides the default value from L<Exception::Base>
+class.
+
+=cut
+
+    $ATTRS{string_attributes} = [ 'message', 'warning' ];
+
+=item default_attribute : Str = "warning"
+
+Meta-attribute contains the name of the default attribute.  This class
+overrides the default value from L<Exception::Base> class.
+
+=back
+
+=cut
+
+    $ATTRS{default_attribute} = 'warning';
+
+    use Exception::Base 0.21;
+    Exception::Base->import(
+        'Exception::Warning' => {
+            has   => { ro => \@ATTRS_RO },
+            %ATTRS,
+        },
+        '+ignore_package' => [ 'Carp' ],
+    );
+};
 
 
-# Handle %SIG tag
+## no critic qw(RequireArgUnpacking)
+## no critic qw(RequireCarping)
+
+=head1 IMPORTS
+
+=over
+
+=item use Exception::Warning '%SIG';
+
+=item use Exception::Warning '%SIG' => 'warn';
+
+Changes C<$SIG{__WARN__}> hook to C<Exception::Warning::__WARN__>.
+
+=item use Exception::Warning '%SIG' => 'die';
+
+Changes C<$SIG{__WARN__}> hook to C<Exception::Warning::__DIE__> function.
+
+=item use Exception::Warning ':debug';
+
+Changes C<$SIG{__WARN__}> hook to C<Exception::Warning::__WARN__> and sets
+verbosity level to 4 (maximum).
+
+=cut
+
 sub import {
-    my $pkg = shift;
+    my ($pkg, @args) = @_;
 
     my @params;
 
-    while (defined $_[0]) {
-        my $name = shift @_;
+    while (defined $args[0]) {
+        my $name = shift @args;
+        if ($name eq ':debug') {
+            $name = '%SIG';
+            @args = ('warn', 'verbosity', 4, @args);
+        };
         if ($name eq '%SIG') {
             my $type = 'warn';
-            if (defined $_[0] and $_[0] =~ /^(die|warn)$/) {
-                $type = shift @_;
+            if (defined $args[0] and $args[0] =~ /^(die|warn)$/) {
+                $type = shift @args;
             };
             # Handle warn hook
             if ($type eq 'warn') {
                 # is 'warn'
+                ## no critic qw(RequireLocalizedPunctuationVars)
                 $SIG{__WARN__} = \&__WARN__;
             }
             else {
                 # must be 'die'
+                ## no critic qw(RequireLocalizedPunctuationVars)
                 $SIG{__WARN__} = \&__DIE__;
             };
         }
         else {
             # Other parameters goes to SUPER::import
             push @params, $name;
-            push @params, shift @_ if defined $_[0] and ref $_[0] eq 'HASH';
+            push @params, shift @args if defined $args[0] and ref $args[0] eq 'HASH';
         };
     };
 
@@ -101,20 +211,27 @@ sub import {
 };
 
 
-# Unexport try/catch
+=item no Exception::Warning '%SIG';
+
+Undefines C<$SIG{__DIE__}> hook.
+
+=back
+
+=cut
+
 sub unimport {
     my $pkg = shift;
-    my $callpkg = caller;
 
     while (my $name = shift @_) {
         if ($name eq '%SIG') {
             # Undef die hook
+            ## no critic qw(RequireLocalizedPunctuationVars)
             $SIG{__WARN__} = '';
         };
     };
 
     return 1;
-}
+};
 
 
 # Warning hook with die
@@ -158,13 +275,12 @@ sub __WARN__ {
         # Otherwise: throw unchanged exception
         warn $_[0];
     };
+    return;
 };
 
 
 1;
 
-
-__END__
 
 =begin umlwiki
 
@@ -173,12 +289,11 @@ __END__
 [                         <<exception>>
                         Exception::Warning
  --------------------------------------------------------------
- +message : Str = "Unknown warning"                       {new}
- +warning : Str
+ +message : Str = "Unknown warning"
+ +warning : Str {ro}
  #default_attribute : Str = "warning"
  #string_attributes : ArrayRef[Str] = ["message", "warning"]
  --------------------------------------------------------------
- #_collect_system_data()
  <<utility>> -__DIE__()
  <<utility>> -__WARN__()
  <<constant>> +ATTRS() : HashRef                               ]
@@ -186,103 +301,6 @@ __END__
 [Exception::Warning] ---|> [Exception::Base]
 
 =end umlwiki
-
-=head1 BASE CLASSES
-
-=over
-
-=item *
-
-L<Exception::Base>
-
-=back
-
-=head1 IMPORTS
-
-=over
-
-=item use Exception::Died '%SIG';
-
-=item use Exception::Died '%SIG' => 'warn';
-
-Changes C<$SIG{__WARN__}> hook to C<Exception::Died::__WARN__> function.
-
-=item use Exception::Died '%SIG' => 'die';
-
-Changes C<$SIG{__WARN__}> hook to C<Exception::Died::__DIE__> function.
-
-=back
-
-=head1 CONSTANTS
-
-=over
-
-=item ATTRS
-
-Declaration of class attributes as reference to hash.
-
-See L<Exception::Base> for details.
-
-=back
-
-=head1 ATTRIBUTES
-
-This class provides new attributes.  See L<Exception::Base> for other
-descriptions.
-
-=over
-
-=item message (rw, default: 'Unknown warning')
-
-Contains the message of the exception.  This class overrides the default value
-from L<Exception::Base> class.
-
-=item warning (ro)
-
-Contains the message which is set by C<$SIG{__WARN__}> hook.
-
-=item string_attributes (default: ['message', 'eval_error'])
-
-Meta-attribute contains the format of string representation of exception
-object.  This class overrides the default value from L<Exception::Base>
-class.
-
-=item default_attribute (default: 'eval_error')
-
-Meta-attribute contains the name of the default attribute.  This class
-overrides the default value from L<Exception::Base> class.
-
-=back
-
-=head1 PRIVATE FUNCTIONS
-
-=over
-
-=item __WARN__
-
-This is a hook function for $SIG{__WARN__}.  It converts the warning into
-exception object which is immediately stringify to scalar and printed with
-C<warn> core function.  This hook can be enabled with pragma:
-
-  use Exception::Died '%SIG' => 'warn';
-
-or manually, i.e. for local scope:
-
-  local $SIG{__WARN__} = \&Exception::Died::__WARN__;
-
-=item __DIE__
-
-This is a hook function for $SIG{__DIE__}.  It converts the warning into
-exception object which is immediately thrown.  This hook can be enabled with
-pragma:
-
-  use Exception::Died '%SIG' => 'die';
-
-or manually, i.e. for local scope:
-
-  local $SIG{__WARN__} = \&Exception::Died::__DIE__;
-
-=back
 
 =head1 PERFORMANCE
 
@@ -298,7 +316,7 @@ a speed for simple warn operation.  It was tested against unhooked warn.
   -------------------------------------------------------
   | Exception::Warning '%SIG'           |        1997/s |
   -------------------------------------------------------
-  | Exception::Warning '%SIG', verb.=>0 |      152348/s |
+  | Exception::Warning '%SIG', verb.=>0 |       26934/s |
   -------------------------------------------------------
 
 It means that C<Exception::Warning> is significally slower than simple warn.
@@ -317,11 +335,11 @@ If you find the bug, please report it.
 
 =head1 AUTHOR
 
-Piotr Roszatycki E<lt>dexter@debian.orgE<gt>
+Piotr Roszatycki <dexter@cpan.org>
 
 =head1 LICENSE
 
-Copyright (C) 2008 by Piotr Roszatycki E<lt>dexter@debian.orgE<gt>.
+Copyright (C) 2008, 2009 by Piotr Roszatycki <dexter@cpan.org>.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

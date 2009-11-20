@@ -9,9 +9,23 @@ MANIFEST.SKIP
 META.yml
 README
 t/all_tests.t
-t/benchmark.pl
-t/cover.sh
-t/pod.t
-t/pod_coverage.t
 t/test.pl
 t/tlib/Exception/WarningTest.pm
+xt/benchmark.pl
+xt/check_changes.t
+xt/consistent_version_numbers.t
+xt/copyright.t
+xt/cover.pl
+xt/distribution.t
+xt/kwalitee.t
+xt/perlcritic.t
+xt/perlcriticrc
+xt/pod.t
+xt/pod_coverage.t
+xt/pod_spell.t
+xt/pod_spellrc
+xt/pod_syntax.t
+xt/signature.t
+LICENSE
+SIGNATURE    Added here by Module::Build
+SIGNATURE    Added here by Module::Build
