@@ -1,6 +1,6 @@
 ---
 name: Exception-Warning
-version: 0.04
+version: 0.0401
 author:
   - 'Piotr Roszatycki <dexter@cpan.org>'
 abstract: Convert simple warn into real exception object
@@ -19,7 +19,7 @@ requires:
 provides:
   Exception::Warning:
     file: lib/Exception/Warning.pm
-    version: 0.04
+    version: 0.0401
 generated_by: Module::Build version 0.35
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html

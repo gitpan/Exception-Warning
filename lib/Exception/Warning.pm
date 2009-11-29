@@ -53,7 +53,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.04';
+our $VERSION = '0.0401';
 
 
 =head1 INHERITANCE
@@ -110,7 +110,7 @@ from L<Exception::Base> class.
 
 =cut
 
-    $ATTRS{message}           = 'eval_error';
+    $ATTRS{message} = 'Unknown warning';
 
 =item string_attributes : ArrayRef[Str] = ["message", "warning"]
 
@@ -329,7 +329,8 @@ L<Exception::Base>.
 
 =head1 BUGS
 
-If you find the bug, please report it.
+If you find the bug or want to implement new features, please report it at
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Exception-Warning>
 
 =for readme continue
 

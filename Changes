@@ -1,4 +1,11 @@
 ------------------------------------------------------------------------
+0.0401 | Piotr Roszatycki <dexter@cpan.org> | 2000-11-29
+
+Changes:
+
+* Fix default warning message.
+
+------------------------------------------------------------------------
 0.04 | Piotr Roszatycki <dexter@cpan.org> | 2000-11-20
 
 Changes:
